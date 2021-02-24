@@ -30,7 +30,7 @@ let moon, phobos, deimos, io, europa, ganymede, callisto, enceladus, titan, dion
 let planetSegments = 96;
 
 // Orbit Data to provide for the rotation and the speed of orbit or rotation
-let orbitData = {value: 250, runOrbit: true, runRotation: true};
+let orbitData = {value: 10, runOrbit: true, runRotation: true};
 
 
 // Sets the width of the white lines (orbit lines)
@@ -168,6 +168,14 @@ window.onclick = function (event) {
 }
 
 
+
+//function keyPress(e) {
+//    if(e.key === "Escape") {
+//        console.log("fick dich")
+//    }
+//}
+
+
 //Function to create ThreeJS rings which are used for the orbits and the rings of saturn
 function getRing(size, innerDiameter, facets, myColor, name, distanceToSun) {
     let ring1Geometry = new THREE.RingGeometry(size, innerDiameter, facets);
@@ -181,6 +189,7 @@ function getRing(size, innerDiameter, facets, myColor, name, distanceToSun) {
 }
 
 // Function for the material which is used for the planets, moons and the sun
+// This function is inspiried by stackoverflow (small parts of it)
 function getMaterial(type, color, myTexture) {
     let materialOptions = {
         color: color === undefined ? 'rgb(255,255,255)' : color,
@@ -261,10 +270,10 @@ function showOrbits() {
 //Function getSphere creates a THREE JS Sphere Geometry 
 function getSphere(material, size, segments) {
     let geometry = new THREE.SphereGeometry(size, segments, segments);
-    let obj = new THREE.Mesh(geometry, material);
-    obj.castShadow = true;
+    let sphere = new THREE.Mesh(geometry, material);
+    sphere.castShadow = true;
 
-    return obj;
+    return sphere;
 }
 
 
@@ -304,19 +313,22 @@ function getPointLight(intensity, color) {
 }
 
 //The initial function that moves the planets around the fixed position which is the sun
+// It uses the current time with Date.now which is in milliseconds and i turn it down to seconds
 function movePlanet(myPlanet, myData, myTime, stopRotation) {
     if (orbitData.runRotation && !stopRotation) {
         myPlanet.rotation.y += myData.rotationRate;
     }
     if (orbitData.runOrbit) {
-        myPlanet.position.x = Math.cos(myTime
-                * (1.0 / (myData.orbitRate * orbitData.value)) + 10.0)
+        myPlanet.position.x = Math.cos((myTime/1000)
+                * (1.0 / (myData.orbitRate / orbitData.value)) + 10.0)
                 * myData.distanceToSun;
-        myPlanet.position.z = Math.sin(myTime
-                * (1.0 / (myData.orbitRate * orbitData.value)) + 10.0)
+        myPlanet.position.z = Math.sin((myTime/1000)
+                * (1.0 / (myData.orbitRate / orbitData.value)) + 10.0)
                 * myData.distanceToSun;
     }
 }
+
+
 //Same function like the planet but here the moon spins around the planet
 function moveMoon(myMoon, myPlanet, myData, myTime) {
     movePlanet(myMoon, myData, myTime);
@@ -332,11 +344,7 @@ function update(renderer, scene, camera, controls) {
     let time = Date.now();
     
     controls.update();
-
-    
-    
-    
-    
+//initializes all the moons and planets
     movePlanet(earth, earthStats, time);
     moveMoon(moon, earth, moonStats, time);
     moveMoon(phobos, mars, phobosStats, time);
@@ -366,7 +374,6 @@ function update(renderer, scene, camera, controls) {
     movePlanet(neptune, neptuneStats, time);
     movePlanet(sun, sunStats, time);
     movePlanet(ring, saturnStats, time, true);
-
 
     renderer.render(scene, camera);
     requestAnimationFrame(function () {
@@ -398,7 +405,7 @@ function init() {
 
     controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-    pointlight = getPointLight(1.3, "rgb(255,220,180)");
+    pointlight = getPointLight(1.3, "rgb(243, 247, 195)");
     scene.add(pointlight);
 
     let ambientLight = new THREE.AmbientLight(0xaaaaaa);
@@ -410,10 +417,8 @@ function init() {
     
     let spriteMaterial = new THREE.SpriteMaterial(
             {
-                map: new THREE.ImageUtils.loadTexture("img/glow.png")
-                , useScreenCoordinates: false
+                map: new THREE.ImageUtils.loadTexture("")
                 , color: 0xffffee
-                , transparent: false
                 , blending: THREE.AdditiveBlending
             });
 
@@ -421,7 +426,7 @@ function init() {
     sprite.scale.set(30, 30, 1.0);
     sun.add(sprite);
 
-
+// all the planets get created and with that function 
     earth = createPlanet(earthStats, earthStats.distanceToSun, 0, 0);
     mars = createPlanet(marsStats, marsStats.distanceToSun, 0, 0);
     mercury = createPlanet(mercuryStats, mercuryStats.distanceToSun, 0, 0);
@@ -431,6 +436,7 @@ function init() {
     uranus = createPlanet(uranusStats, uranusStats.distanceToSun, 0, 0);
     neptune = createPlanet(neptuneStats, neptuneStats.distanceToSun, 0, 0);
     sun = createPlanet(sunStats, sunStats.distanceToSun, 0, 0);
+    
     moon = createPlanet(moonStats, moonStats.distanceToSun, 0, 0);
     phobos = createPlanet(phobosStats, phobosStats.distanceToSun, 0, 0);
     deimos = createPlanet(deimosStats, deimosStats.distanceToSun, 0, 0);
@@ -446,12 +452,14 @@ function init() {
     umbriel = createPlanet(umbrielStats, umbrielStats.distanceToSun, 0, 0);
     ariel = createPlanet(arielStats, arielStats.distanceToSun, 0, 0);
     triton = createPlanet(tritonStats, tritonStats.distanceToSun, 0, 0);
+    
     ring = getRing(20, 15, 1000, 0x757064, "ring", saturnStats.distanceToSun);
+
 
     showOrbits();
 
     let gui = new dat.GUI();
-    let orbits = gui.addFolder('speed');
+    let orbits = gui.addFolder('Settings');
     orbits.add(orbitData, 'value', 0, 500);
     orbits.add(orbitData, 'runOrbit', 0, 1);
     orbits.add(orbitData, 'runRotation', 0, 1);
