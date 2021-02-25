@@ -10,7 +10,7 @@
 //
 //Author: Shpetim Veseli    VES     IMS Frauenfeld      24.02.2021
 //
-//Version   1.6     Updated by: VES
+//Version   2.0     Updated by: VES
 //
 //All the rights remain to the original creator Shpetim Veseli ©
 // --------------------------------------------------------------------------------------
@@ -42,13 +42,13 @@ let sunStats = new CPlanets(1, 0.002, 0, "sun", "img/sun.jpg", 48, planetSegment
 // Creates all the Data for all the planets and saves them into their variables.
 //CPlanets(rotationRate,OrbitRate,distanceToSun,name,texturelocation,size,segments)
 let earthStats = new CPlanets(365, 0.009, 180, "earth", "img/earth2.jpg", 2, planetSegments);
-let mercuryStats = new CPlanets(115, 0.002, 70.2, "mercury", "img/mercury.jpg", 1, planetSegments);
-let venusStats = new CPlanets(225, 0.009, 131.4, "venus", "img/venus.jpg", 1.2, planetSegments);
-let marsStats = new CPlanets(687, 0.012, 248.4, "mars", "img/mars.jpg", 1.5, planetSegments);
-let jupiterStats = new CPlanets(4328.9, 0.015, 410, "jupiter", "img/jupiter.jpg", 11, planetSegments);
-let saturnStats = new CPlanets(10749.25, 0.015, 650, "saturn", "img/saturn.jpg", 9, planetSegments);
-let uranusStats = new CPlanets(30660, 0.013, 900, "uranus", "img/uranus.jpg", 4, planetSegments);
-let neptuneStats = new CPlanets(60155.65, 0.012, 1000, "neptune", "img/neptune.png", 3.8, planetSegments);
+let mercuryStats = new CPlanets(115, 0.002, 70.2, "mercury", "img/mercury.jpg", 0.5*earthStats.size, planetSegments);
+let venusStats = new CPlanets(225, 0.009, 131.4, "venus", "img/venus.jpg", 0.6*earthStats.size, planetSegments);
+let marsStats = new CPlanets(687, 0.012, 248.4, "mars", "img/mars.jpg", 0.75*earthStats.size, planetSegments);
+let jupiterStats = new CPlanets(4328.9, 0.015, 410, "jupiter", "img/jupiter.jpg", 5.2*earthStats.size, planetSegments);
+let saturnStats = new CPlanets(10749.25, 0.015, 650, "saturn", "img/saturn.jpg", 4.5*earthStats.size, planetSegments);
+let uranusStats = new CPlanets(30660, 0.013, 900, "uranus", "img/uranus.jpg", 2*earthStats.size, planetSegments);
+let neptuneStats = new CPlanets(60155.65, 0.012, 1000, "neptune", "img/neptune.png", 1.9*earthStats.size, planetSegments);
 
 
 // Creates all the Data for all the moons and saves them into their variables.
@@ -71,11 +71,100 @@ let arielStats = new CMoons(25, 0.01, 65, "ariel", "img/moon.jpg", 0.7, planetSe
 let tritonStats = new CMoons(60, 0.01, 55, "triton", "img/triton.jpg", 0.7, planetSegments);
 
 
+
 //GLobal variables for the 2 THREEJS variables raycaster and mouse, which are used for 
 //click functions on specified objects
 let raycaster = new THREE.Raycaster();
 let mouse = new THREE.Vector2();
 let selectedObject;
+
+
+//Function getSphere creates a THREE JS Sphere Geometry 
+function getSphere(material, size, segments) {
+    let geometry = new THREE.SphereGeometry(size, segments, segments);
+    let sphere = new THREE.Mesh(geometry, material);
+    sphere.castShadow = true;
+
+    return sphere;
+}
+
+// Function for the material which is used for the planets, moons and the sun
+// This function is inspiried by stackoverflow (small parts of it)
+function getMaterial(type, color, myTexture) {
+    let materialOptions = {
+        color: color === undefined ? 'rgb(255,255,255)' : color,
+        map: myTexture === undefined ? null : myTexture
+    };
+    switch (type) {
+        case 'basic':
+            return new THREE.MeshBasicMaterial(materialOptions);
+        case 'lambert':
+            return new THREE.MeshLambertMaterial(materialOptions);
+        case 'phong':
+            return new THREE.MeshPhongMaterial(materialOptions);
+        case 'standard':
+            return new THREE.MeshStandardMaterial(materialOptions);
+        default:
+            return new THREE.MeshBasicMaterial(materialOptions);
+    }
+    
+    
+}
+
+
+
+// Function createPlanet takes the data, the positon, and the material type and creates the planets.
+function createPlanet(myData, x, y, z, myMaterialType) {
+    let myMaterial;
+    let passThisTexture;
+
+    if (myData.texture && myData.texture !== "") {
+        passThisTexture = new THREE.ImageUtils.loadTexture(myData.texture);
+    }
+    if (myMaterialType) {
+        myMaterial = getMaterial(myMaterialType, "rgb(255,255,255)", passThisTexture);
+    } else {
+        myMaterial = getMaterial("lambert", "rgb(255,255,255)", passThisTexture);
+    }
+
+    myMaterial.receiveShadow = true;
+    myMaterial.castShadow = true;
+    let myPlanet = getSphere(myMaterial, myData.size, myData.segments);
+    myPlanet.receiveShadow = true;
+    myPlanet.name = myData.name;
+    scene.add(myPlanet);
+    myPlanet.position.set(x, y, z);
+
+    return myPlanet;
+}
+
+//Function to create ThreeJS rings which are used for the orbits and the rings of saturn
+function getRing(size, innerDiameter, facets, myColor, name, distanceToSun) {
+    let ring1Geometry = new THREE.RingGeometry(size, innerDiameter, facets);
+    let ring1Material = new THREE.MeshBasicMaterial({color: myColor, side: THREE.DoubleSide});
+    let myRing = new THREE.Mesh(ring1Geometry, ring1Material);
+    myRing.name = name;
+    myRing.position.set(distanceToSun, 0, 0);
+    myRing.rotation.x = Math.PI / 2;
+    scene.add(myRing);
+    return myRing;
+}
+
+
+
+//This function shows all the orbits of the planets in a white color.
+function showOrbits() {
+    
+    earthOrbit = getRing(earthStats.distanceToSun + orbitWidth, earthStats.distanceToSun - orbitWidth, 320, 0xffffff, "earthOrbit", 0);
+    mercuryOrbit = getRing(mercuryStats.distanceToSun + orbitWidth, mercuryStats.distanceToSun - orbitWidth, 320, 0xffffff, "mercuryOrbit", 0);
+    venusOrbit = getRing(venusStats.distanceToSun + orbitWidth, venusStats.distanceToSun - orbitWidth, 320, 0xffffff, "venusOrbit", 0);
+    marsOrbit = getRing(marsStats.distanceToSun + orbitWidth, marsStats.distanceToSun - orbitWidth, 320, 0xffffff, "marsOrbit", 0);
+    jupiterOrbit = getRing(jupiterStats.distanceToSun + orbitWidth, jupiterStats.distanceToSun - orbitWidth, 320, 0xffffff, "jupiterOrbit", 0);
+    saturnOrbit = getRing(saturnStats.distanceToSun + orbitWidth, saturnStats.distanceToSun - orbitWidth, 320, 0xffffff, "saturnOrbit", 0);
+    uranusOrbit = getRing(uranusStats.distanceToSun + orbitWidth, uranusStats.distanceToSun - orbitWidth, 320, 0xffffff, "uranusOrbit", 0);
+    neptuneOrbit = getRing(neptuneStats.distanceToSun + orbitWidth, neptuneStats.distanceToSun - orbitWidth, 320, 0xffffff, "neptuneOrbit", 0);
+}
+
 
 //Function onclick is to determine if a user double clicks on a certain object and show the information about the planets.
 function onclick1(event) {
@@ -169,138 +258,6 @@ window.onclick = function (event) {
 
 
 
-//function keyPress(e) {
-//    if(e.key === "Escape") {
-//        console.log("fick dich")
-//    }
-//}
-
-
-//Function to create ThreeJS rings which are used for the orbits and the rings of saturn
-function getRing(size, innerDiameter, facets, myColor, name, distanceToSun) {
-    let ring1Geometry = new THREE.RingGeometry(size, innerDiameter, facets);
-    let ring1Material = new THREE.MeshBasicMaterial({color: myColor, side: THREE.DoubleSide});
-    let myRing = new THREE.Mesh(ring1Geometry, ring1Material);
-    myRing.name = name;
-    myRing.position.set(distanceToSun, 0, 0);
-    myRing.rotation.x = Math.PI / 2;
-    scene.add(myRing);
-    return myRing;
-}
-
-// Function for the material which is used for the planets, moons and the sun
-// This function is inspiried by stackoverflow (small parts of it)
-function getMaterial(type, color, myTexture) {
-    let materialOptions = {
-        color: color === undefined ? 'rgb(255,255,255)' : color,
-        map: myTexture === undefined ? null : myTexture
-    };
-    switch (type) {
-        case 'basic':
-            return new THREE.MeshBasicMaterial(materialOptions);
-        case 'lambert':
-            return new THREE.MeshLambertMaterial(materialOptions);
-        case 'phong':
-            return new THREE.MeshPhongMaterial(materialOptions);
-        case 'standard':
-            return new THREE.MeshStandardMaterial(materialOptions);
-        default:
-            return new THREE.MeshBasicMaterial(materialOptions);
-    }
-    
-    if(type === 'basic') {
-        return new THREE.MeshBasicMaterial(materialOptions);
-    }
-}
-
-
-//This function shows all the orbits of the planets in a white color.
-function showOrbits() {
-    
-    earthOrbit = getRing(earthStats.distanceToSun + orbitWidth
-            , earthStats.distanceToSun - orbitWidth
-            , 320
-            , 0xffffff
-            , "earthOrbit"
-            , 0);
-    mercuryOrbit = getRing(mercuryStats.distanceToSun + orbitWidth
-            , mercuryStats.distanceToSun - orbitWidth
-            , 320
-            , 0xffffff
-            , "mercuryOrbit"
-            , 0);
-    venusOrbit = getRing(venusStats.distanceToSun + orbitWidth
-            , venusStats.distanceToSun - orbitWidth
-            , 320
-            , 0xffffff
-            , "venusOrbit"
-            , 0);
-    marsOrbit = getRing(marsStats.distanceToSun + orbitWidth
-            , marsStats.distanceToSun - orbitWidth
-            , 320
-            , 0xffffff
-            , "marsOrbit"
-            , 0);
-    jupiterOrbit = getRing(jupiterStats.distanceToSun + orbitWidth
-            , jupiterStats.distanceToSun - orbitWidth
-            , 320
-            , 0xffffff
-            , "jupiterOrbit"
-            , 0);
-    saturnOrbit = getRing(saturnStats.distanceToSun + orbitWidth
-            , saturnStats.distanceToSun - orbitWidth
-            , 320
-            , 0xffffff
-            , "saturnOrbit"
-            , 0);
-    uranusOrbit = getRing(uranusStats.distanceToSun + orbitWidth
-            , uranusStats.distanceToSun - orbitWidth
-            , 320
-            , 0xffffff
-            , "uranusOrbit"
-            , 0);
-    neptuneOrbit = getRing(neptuneStats.distanceToSun + orbitWidth
-            , neptuneStats.distanceToSun - orbitWidth
-            , 320
-            , 0xffffff
-            , "neptuneOrbit"
-            , 0);
-}
-
-//Function getSphere creates a THREE JS Sphere Geometry 
-function getSphere(material, size, segments) {
-    let geometry = new THREE.SphereGeometry(size, segments, segments);
-    let sphere = new THREE.Mesh(geometry, material);
-    sphere.castShadow = true;
-
-    return sphere;
-}
-
-
-// Function createPlanet takes the data, the positon, and the material type and creates the planets.
-function createPlanet(myData, x, y, z, myMaterialType) {
-    let myMaterial;
-    let passThisTexture;
-
-    if (myData.texture && myData.texture !== "") {
-        passThisTexture = new THREE.ImageUtils.loadTexture(myData.texture);
-    }
-    if (myMaterialType) {
-        myMaterial = getMaterial(myMaterialType, "rgb(255,255,255)", passThisTexture);
-    } else {
-        myMaterial = getMaterial("lambert", "rgb(255,255,255)", passThisTexture);
-    }
-
-    myMaterial.receiveShadow = true;
-    myMaterial.castShadow = true;
-    let myPlanet = getSphere(myMaterial, myData.size, myData.segments);
-    myPlanet.receiveShadow = true;
-    myPlanet.name = myData.name;
-    scene.add(myPlanet);
-    myPlanet.position.set(x, y, z);
-
-    return myPlanet;
-}
 //Function to set the light for the solar system starting from the sun (it gives shadows to the planets and lights them up)
 function getPointLight(intensity, color) {
     let light = new THREE.PointLight(color, intensity);
@@ -320,10 +277,10 @@ function movePlanet(myPlanet, myData, myTime, stopRotation) {
     }
     if (orbitData.runOrbit) {
         myPlanet.position.x = Math.cos((myTime/1000)
-                * (1.0 / (myData.orbitRate / orbitData.value)) + 10.0)
+                * (1.0 / (myData.orbitRate / orbitData.value)) )
                 * myData.distanceToSun;
         myPlanet.position.z = Math.sin((myTime/1000)
-                * (1.0 / (myData.orbitRate / orbitData.value)) + 10.0)
+                * (1.0 / (myData.orbitRate / orbitData.value)) )
                 * myData.distanceToSun;
     }
 }
@@ -381,6 +338,7 @@ function update(renderer, scene, camera, controls) {
     });
 }
 
+
 //Initialize function to start everything and set up the threejs camera it also creates the planets 
 function init() {
     camera = new THREE.PerspectiveCamera(
@@ -397,6 +355,7 @@ function init() {
     scene = new THREE.Scene();
 
     renderer = new THREE.WebGLRenderer({
+        //smoother lines
         antialias: true
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -415,18 +374,8 @@ function init() {
     sun = getSphere(sunMaterial, 1, 48);
     scene.add(sun);
     
-    let spriteMaterial = new THREE.SpriteMaterial(
-            {
-                map: new THREE.ImageUtils.loadTexture("")
-                , color: 0xffffee
-                , blending: THREE.AdditiveBlending
-            });
 
-    let sprite = new THREE.Sprite(spriteMaterial);
-    sprite.scale.set(30, 30, 1.0);
-    sun.add(sprite);
-
-// all the planets get created and with that function 
+// all the planets get initizalized by this function and this function will create the planets and automatically add them to the scene
     earth = createPlanet(earthStats, earthStats.distanceToSun, 0, 0);
     mars = createPlanet(marsStats, marsStats.distanceToSun, 0, 0);
     mercury = createPlanet(mercuryStats, mercuryStats.distanceToSun, 0, 0);
@@ -455,15 +404,27 @@ function init() {
     
     ring = getRing(20, 15, 1000, 0x757064, "ring", saturnStats.distanceToSun);
 
-
+//makes the orbits of the planets visible
     showOrbits();
-
+//Helptext
+           var object1 = {
+               Helptext: function () {
+                   alert('This site gives an overview on our Solarsystem and you can look around and explore it. \n \nLook Around: Look around by pressing mouse1 and dragging \
+                   \nMove: By Clicking right mouse button and draggin you can move your camera. \nrunRotation: In the Settings menu you can stop the rotation of the planets. \
+                   \nrunOrbit: By Pressing runOrbit the planets stop orbiting the sun.\nInformation: Double clicking the planets will give you little information about the planets. \
+                   \nAdjusting the value: It will speed up or speed down the orbit Rate \nAdjusting the intensity: It will increase or decrease the intensity of the light, the sun emits.');
+               }
+           };
+//GUI for the settings
     let gui = new dat.GUI();
     let orbits = gui.addFolder('Settings');
+    let help = gui.addFolder('Help');
+    help.add(object1,'Helptext')
     orbits.add(orbitData, 'value', 0, 500);
     orbits.add(orbitData, 'runOrbit', 0, 1);
     orbits.add(orbitData, 'runRotation', 0, 1);
-
+    orbits.add(pointlight,'intensity');
+//updates
     update(renderer, scene, camera, controls);
     renderer.domElement.addEventListener("dblclick", onclick1, false);
 
