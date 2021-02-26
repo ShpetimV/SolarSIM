@@ -1,5 +1,5 @@
 import { CSpaceObjects } from './CSpaceObject.js';
-let myMaterial;
+
 
 
 // Class of the Moons, which is a child class of CSpaceObjects

@@ -21,7 +21,7 @@ import { CPlanets } from './CPlanet.js';
 
 //Global variables
 let pointlight, controls, scene, camera, renderer;
-let earthOrbit,mercuryOrbit,venusOrbit,marsOrbit,jupiterOrbit,saturnOrbit,uranusOrbit,neptuneOrbit, ring;
+let ring;
 //All the planet variables including the sun
 let sun, earth, mars, mercury, venus, jupiter, saturn, neptune, uranus;
 //All the moon variables for Earth, Mars, Jupiter, Saturn, Uranus and Neptune
@@ -271,6 +271,7 @@ function getPointLight(intensity, color) {
 //The initial function that moves the planets around the fixed position which is the sun
 // It uses the current time with Date.now which is in milliseconds and i turn it down to seconds
 function movePlanet(myPlanet, plntData, myTime, stopRotation) {
+    
     if (orbitData.runRotation && !stopRotation) {
         myPlanet.rotation.y += plntData.rotationRate;
     }
