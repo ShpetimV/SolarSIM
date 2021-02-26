@@ -30,8 +30,7 @@ let moon, phobos, deimos, io, europa, ganymede, callisto, enceladus, titan, dion
 let planetSegments = 96;
 
 // Orbit Data to provide for the rotation and the speed of orbit or rotation
-let orbitData = {value: 10, runOrbit: true, runRotation: true};
-
+let orbitData = {velocity: 10, runOrbit: true, runRotation: true};
 
 // Sets the width of the white lines (orbit lines)
 let orbitWidth = 0.15;
@@ -41,7 +40,7 @@ let sunStats = new CPlanets(1, 0.002, 0, "sun", "img/sun.jpg", 48, planetSegment
 
 // Creates all the Data for all the planets and saves them into their variables.
 //CPlanets(rotationRate,OrbitRate,distanceToSun,name,texturelocation,size,segments)
-let earthStats = new CPlanets(365, 0.009, 180, "earth", "img/earth2.jpg", 2, planetSegments);
+let earthStats = new CPlanets(365, 0.009, 180, "earth", "img/earth.jpg", 2, planetSegments);
 let mercuryStats = new CPlanets(115, 0.002, 70.2, "mercury", "img/mercury.jpg", 0.5*earthStats.size, planetSegments);
 let venusStats = new CPlanets(225, 0.009, 131.4, "venus", "img/venus.jpg", 0.6*earthStats.size, planetSegments);
 let marsStats = new CPlanets(687, 0.012, 248.4, "mars", "img/mars.jpg", 0.75*earthStats.size, planetSegments);
@@ -79,7 +78,7 @@ let mouse = new THREE.Vector2();
 let selectedObject;
 
 
-//Function getSphere creates a THREE JS Sphere Geometry 
+//Function getSphere creates a THREE JS Sphere Geometry and returns the object
 function getSphere(material, size, segments) {
     let geometry = new THREE.SphereGeometry(size, segments, segments);
     let sphere = new THREE.Mesh(geometry, material);
@@ -114,12 +113,12 @@ function getMaterial(type, color, myTexture) {
 
 
 // Function createPlanet takes the data, the positon, and the material type and creates the planets.
-function createPlanet(myData, x, y, z, myMaterialType) {
+function createPlanet(plntData, x, y, z, myMaterialType) {
     let myMaterial;
     let passThisTexture;
 
-    if (myData.texture && myData.texture !== "") {
-        passThisTexture = new THREE.ImageUtils.loadTexture(myData.texture);
+    if (plntData.texture && plntData.texture !== "") {
+        passThisTexture = new THREE.ImageUtils.loadTexture(plntData.texture);
     }
     if (myMaterialType) {
         myMaterial = getMaterial(myMaterialType, "rgb(255,255,255)", passThisTexture);
@@ -129,9 +128,9 @@ function createPlanet(myData, x, y, z, myMaterialType) {
 
     myMaterial.receiveShadow = true;
     myMaterial.castShadow = true;
-    let myPlanet = getSphere(myMaterial, myData.size, myData.segments);
+    let myPlanet = getSphere(myMaterial, plntData.size, plntData.segments);
     myPlanet.receiveShadow = true;
-    myPlanet.name = myData.name;
+    myPlanet.name = plntData.name;
     scene.add(myPlanet);
     myPlanet.position.set(x, y, z);
 
@@ -271,24 +270,24 @@ function getPointLight(intensity, color) {
 
 //The initial function that moves the planets around the fixed position which is the sun
 // It uses the current time with Date.now which is in milliseconds and i turn it down to seconds
-function movePlanet(myPlanet, myData, myTime, stopRotation) {
+function movePlanet(myPlanet, plntData, myTime, stopRotation) {
     if (orbitData.runRotation && !stopRotation) {
-        myPlanet.rotation.y += myData.rotationRate;
+        myPlanet.rotation.y += plntData.rotationRate;
     }
     if (orbitData.runOrbit) {
         myPlanet.position.x = Math.cos((myTime/1000)
-                * (1.0 / (myData.orbitRate / orbitData.value)) )
-                * myData.distanceToSun;
+                * (1.0 / (plntData.orbitRate / orbitData.velocity)) )
+                * plntData.distanceToSun;
         myPlanet.position.z = Math.sin((myTime/1000)
-                * (1.0 / (myData.orbitRate / orbitData.value)) )
-                * myData.distanceToSun;
+                * (1.0 / (plntData.orbitRate / orbitData.velocity)) )
+                * plntData.distanceToSun;
     }
 }
 
 
 //Same function like the planet but here the moon spins around the planet
-function moveMoon(myMoon, myPlanet, myData, myTime) {
-    movePlanet(myMoon, myData, myTime);
+function moveMoon(myMoon, myPlanet, plntData, myTime) {
+    movePlanet(myMoon, plntData, myTime);
     if (orbitData.runOrbit) {
         myMoon.position.x = myMoon.position.x + myPlanet.position.x;
         myMoon.position.z = myMoon.position.z + myPlanet.position.z;
@@ -337,6 +336,7 @@ function update(renderer, scene, camera, controls) {
         update(renderer, scene, camera, controls);
     });
 }
+
 
 
 //Initialize function to start everything and set up the threejs camera it also creates the planets 
@@ -420,7 +420,7 @@ function init() {
     let orbits = gui.addFolder('Settings');
     let help = gui.addFolder('Help');
     help.add(object1,'Helptext')
-    orbits.add(orbitData, 'value', 0, 500);
+    orbits.add(orbitData, 'velocity', 0, 500);
     orbits.add(orbitData, 'runOrbit', 0, 1);
     orbits.add(orbitData, 'runRotation', 0, 1);
     orbits.add(pointlight,'intensity');
