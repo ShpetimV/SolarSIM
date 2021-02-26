@@ -21,7 +21,8 @@ import { CPlanets } from './CPlanet.js';
 
 //Global variables
 let pointlight, controls, scene, camera, renderer;
-let ring;
+//Creates the variables for the orbits.
+let earthOrbit,mercuryOrbit,venusOrbit,marsOrbit,jupiterOrbit,saturnOrbit,uranusOrbit,neptuneOrbit,ring;
 //All the planet variables including the sun
 let sun, earth, mars, mercury, venus, jupiter, saturn, neptune, uranus;
 //All the moon variables for Earth, Mars, Jupiter, Saturn, Uranus and Neptune
@@ -113,17 +114,19 @@ function getMaterial(type, color, myTexture) {
 
 
 // Function createPlanet takes the data, the positon, and the material type and creates the planets.
+// checks first if texture is empty, which it should be and then it adds the texture that you give it.
+//also shadows get added to the planets
 function createPlanet(plntData, x, y, z, myMaterialType) {
     let myMaterial;
-    let passThisTexture;
+    let passTexture;
 
     if (plntData.texture && plntData.texture !== "") {
-        passThisTexture = new THREE.ImageUtils.loadTexture(plntData.texture);
+        passTexture = new THREE.ImageUtils.loadTexture(plntData.texture);
     }
     if (myMaterialType) {
-        myMaterial = getMaterial(myMaterialType, "rgb(255,255,255)", passThisTexture);
+        myMaterial = getMaterial(myMaterialType, "rgb(255,255,255)", passTexture);
     } else {
-        myMaterial = getMaterial("lambert", "rgb(255,255,255)", passThisTexture);
+        myMaterial = getMaterial("lambert", "rgb(255,255,255)", passTexture);
     }
 
     myMaterial.receiveShadow = true;
@@ -138,6 +141,7 @@ function createPlanet(plntData, x, y, z, myMaterialType) {
 }
 
 //Function to create ThreeJS rings which are used for the orbits and the rings of saturn
+// basic function created after the documentation of three.js on how to create a ring
 function getRing(size, innerDiameter, facets, myColor, name, distanceToSun) {
     let ring1Geometry = new THREE.RingGeometry(size, innerDiameter, facets);
     let ring1Material = new THREE.MeshBasicMaterial({color: myColor, side: THREE.DoubleSide});
